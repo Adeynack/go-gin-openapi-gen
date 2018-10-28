@@ -13,3 +13,6 @@
 
 # IDEs
 .idea
+
+# Test helper files
+/test/*_generated.txt

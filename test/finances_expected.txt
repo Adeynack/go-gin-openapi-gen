@@ -1,0 +1,12 @@
+package api
+
+type Book struct {
+	id       *BookId
+	name     string
+	owner_id *UserId
+}
+type BookId int
+type BookList struct {
+	items []*Book
+}
+type UserId int

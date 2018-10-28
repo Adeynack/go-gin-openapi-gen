@@ -12,17 +12,18 @@ type Config struct {
 }
 
 type Generation struct {
-	config *Config
-	file   *jen.File
+	Config *Config
+	File   *jen.File
 }
 
-func generate(c *Config) (*Generation, error) {
+// Generate starts the code generation process.
+func Generate(c *Config) (*Generation, error) {
 	g := &Generation{
 		c,
 		jen.NewFile("api"),
 	}
 
-	err := g.generateComponents(&g.config.Specification.Components)
+	err := g.generateComponents(&g.Config.Specification.Components)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +56,7 @@ func (g *Generation) generateSchema(schemaName string, schema *openapi3.SchemaRe
 	case "object":
 		g.generateObjectSchema(schemaName, schema.Value)
 	default:
-		statement := g.file.Type().Id(schemaName)
+		statement := g.File.Type().Id(schemaName)
 		g.addTypeToStatementFromSchemaRef(statement, schema)
 	}
 
@@ -75,7 +76,7 @@ func (g *Generation) generateObjectSchema(schemaName string, schema *openapi3.Sc
 		i++
 	}
 
-	g.file.Type().Id(schemaName).Struct(structProperties...)
+	g.File.Type().Id(schemaName).Struct(structProperties...)
 	return nil
 }
 
@@ -85,7 +86,7 @@ func (g *Generation) addTypeToStatementFromSchemaRef(statement *jen.Statement, p
 		if err != nil {
 			return err
 		}
-		statement.Qual(g.file.PackagePrefix, "*"+typeId)
+		statement.Qual(g.File.PackagePrefix, "*"+typeId)
 		return nil
 	}
 
@@ -129,7 +130,7 @@ func (g *Generation) completeArrayProperty(statement *jen.Statement, schema *ope
 	if err != nil {
 		return err
 	}
-	statement.Index().Qual(g.file.PackagePrefix, `*`+typeName)
+	statement.Index().Qual(g.File.PackagePrefix, `*`+typeName)
 	return nil
 }
 
