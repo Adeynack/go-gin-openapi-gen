@@ -12,16 +12,14 @@ type Config struct {
 }
 
 type Generation struct {
-	config    *Config
-	file      *jen.File
-	refToType map[string]string
+	config *Config
+	file   *jen.File
 }
 
 func generate(c *Config) (*Generation, error) {
 	g := &Generation{
 		c,
 		jen.NewFile("api"),
-		make(map[string]string),
 	}
 
 	err := g.generateComponents(&g.config.Specification.Components)
@@ -131,7 +129,7 @@ func (g *Generation) completeArrayProperty(statement *jen.Statement, schema *ope
 	if err != nil {
 		return err
 	}
-	statement.Qual(g.file.PackagePrefix, "*"+typeName)
+	statement.Index().Qual(g.file.PackagePrefix, `*`+typeName)
 	return nil
 }
 

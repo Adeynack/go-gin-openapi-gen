@@ -3,6 +3,7 @@ package ginoascore
 import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 )
 
@@ -16,21 +17,88 @@ func Test_LoadYamlSpecification(t *testing.T) {
 	conf := &Config{
 		swagger,
 	}
+	assertSource(t, conf, func(t *testing.T, sa *SourceAssert) {
+		sa.assertContainStruct("Book", []expectedStructProperty{
+			{"id", "*BookId", ""},
+			{"name", "string", ""},
+			{"owner_id", "*UserId", ""},
+		})
+		sa.assertContainStruct("BookList", []expectedStructProperty{
+			{"items", "[]*Book", ""},
+		})
+	})
+}
+
+func assertSource(t *testing.T, conf *Config, f func(t *testing.T, sourceAssert *SourceAssert)) {
 	g, err := generate(conf)
 	if !assert.NoError(t, err) {
 		return
 	}
+	if !assert.NotNil(t, g) {
+		return
+	}
+	sourceAssert := &SourceAssert{
+		t:   t,
+		src: g.file.GoString(),
+	}
+	f(t, sourceAssert)
+}
 
-	assert.NotNil(t, g)
+type SourceAssert struct {
+	t   *testing.T
+	src string
+}
 
-	r := g.file.GoString()
+type expectedStructProperty struct {
+	name       string
+	typ        string
+	annotation string
+}
 
-	assert.Contains(t, r, "type Book struct {")
-	assert.Contains(t, r, "type BookList struct {")
+const (
+	rxSep    = `[\t ]+`
+	rxSepOpt = `[\t ]*`
+)
 
-	println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
-	println(r)
-	println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+func (sa *SourceAssert) assertContainStruct(expectedStructName string, expectedProperties []expectedStructProperty) {
+	if expectedStructName == "" {
+		assert.Fail(sa.t, "an expected struct must have a name")
+		return
+	}
+	rx := new(strings.Builder)
+	rx.WriteString(`\ntype `)
+	rx.WriteString(expectedStructName)
+	rx.WriteString(` struct \{\n`)
+	for i, p := range expectedProperties {
+		rx.WriteString(rxSepOpt)
+		if p.name == "" {
+			assert.Failf(sa.t, "expecting struct %q: missing property name at index %d", expectedStructName, i)
+			return
+		}
+		rx.WriteString(p.name)
+
+		rx.WriteString(rxSep)
+		typ := p.typ
+		if typ == "" {
+			assert.Failf(sa.t, "expecting struct %q: missing property type at index %d", expectedStructName, i)
+			return
+		}
+		typ = strings.Replace(typ, "*", `\*`, -1)
+		typ = strings.Replace(typ, "[", `\[`, -1)
+		typ = strings.Replace(typ, "]", `\]`, -1)
+		rx.WriteString(typ)
+
+		if p.annotation != "" {
+			rx.WriteString(rxSep)
+			rx.WriteString("`")
+			rx.WriteString(p.annotation)
+			rx.WriteString("`")
+		}
+		rx.WriteString(`\n`)
+	}
+	rx.WriteString(`\}\n`)
+	regEx := rx.String()
+	assert.Regexp(sa.t, regEx, sa.src, "expected struct %q was not found or not as specified", expectedStructName)
 }
 
 const (
@@ -94,8 +162,6 @@ components:
           type: string
         owner_id:
           $ref: '#/components/schemas/UserId'
-        parent_list:
-          $ref: '#/components/schemas/BookList'
 
     BookList:
       type: object
