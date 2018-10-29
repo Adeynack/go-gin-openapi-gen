@@ -9,7 +9,8 @@ import (
 )
 
 type Config struct {
-	Specification *openapi3.Swagger
+	Specification   *openapi3.Swagger
+	OutputDirectory string
 }
 
 type Generation struct {
