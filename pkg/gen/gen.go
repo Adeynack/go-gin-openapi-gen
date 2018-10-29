@@ -1,10 +1,11 @@
-package ginoascore
+package gen
 
 import (
 	"errors"
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/getkin/kin-openapi/openapi3"
+	"sort"
 )
 
 type Config struct {
@@ -40,8 +41,13 @@ func (g *Generation) generateComponents(components *openapi3.Components) error {
 }
 
 func (g *Generation) generateSchemas(schemas map[string]*openapi3.SchemaRef) error {
-	for schemaName, schema := range schemas {
-		if err := g.generateSchema(schemaName, schema); err != nil {
+	schemaNames := make([]string, 0, len(schemas))
+	for n := range schemas {
+		schemaNames = append(schemaNames, n)
+	}
+	sort.Strings(schemaNames)
+	for _, schemaName := range schemaNames {
+		if err := g.generateSchema(schemaName, schemas[schemaName]); err != nil {
 			return err
 		}
 	}
@@ -64,11 +70,15 @@ func (g *Generation) generateSchema(schemaName string, schema *openapi3.SchemaRe
 }
 
 func (g *Generation) generateObjectSchema(schemaName string, schema *openapi3.Schema) error {
+	propertyNames := make([]string, 0, len(schema.Properties))
+	for n := range schema.Properties {
+		propertyNames = append(propertyNames, n)
+	}
+	sort.Strings(propertyNames)
 	structProperties := make([]jen.Code, len(schema.Properties))
-	i := 0
-	for propName, prop := range schema.Properties {
+	for i, propName := range propertyNames {
 		genProp := jen.Id(propName)
-		err := g.addTypeToStatementFromSchemaRef(genProp, prop)
+		err := g.addTypeToStatementFromSchemaRef(genProp, schema.Properties[propName])
 		if err != nil {
 			return err
 		}

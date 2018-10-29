@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/adeynack/go-gin-openapi-gen"
+	"github.com/adeynack/go-gin-openapi-gen/pkg/gen"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -10,10 +10,23 @@ import (
 )
 
 func Test_Finances(t *testing.T) {
-	testFromYaml(t, "finances")
+	testFromYaml(t, "finances", func(t *testing.T, swagger *openapi3.Swagger) {
+		schemaNames := make([]string, len(swagger.Components.Schemas))
+		i := 0
+		for n := range swagger.Components.Schemas {
+			schemaNames[i] = n
+			i++
+		}
+		assert.Equal(t, []string{
+			"Book",
+			"BookId",
+			"BookList",
+			"UserId",
+		}, schemaNames)
+	})
 }
 
-func testFromYaml(t *testing.T, specificationName string) {
+func testFromYaml(t *testing.T, specificationName string, swaggerTestFn func(t *testing.T, swagger *openapi3.Swagger)) {
 	loader := openapi3.NewSwaggerLoader()
 	assert.NotNil(t, loader)
 	specificationFileContent, err := ioutil.ReadFile(specificationName + ".yaml")
@@ -24,10 +37,13 @@ func testFromYaml(t *testing.T, specificationName string) {
 	if !assert.NoError(t, err) {
 		return
 	}
-	conf := &ginoascore.Config{
+	if swaggerTestFn != nil {
+		swaggerTestFn(t, swagger)
+	}
+	conf := &gen.Config{
 		Specification: swagger,
 	}
-	g, err := ginoascore.Generate(conf)
+	g, err := gen.Generate(conf)
 	if !assert.NoError(t, err) {
 		return
 	}
