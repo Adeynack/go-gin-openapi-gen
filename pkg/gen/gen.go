@@ -42,11 +42,13 @@ func (g *Generation) generateComponents(components *openapi3.Components) error {
 }
 
 func (g *Generation) generateSchemas(schemas map[string]*openapi3.SchemaRef) error {
+	// Sort schemas by name
 	schemaNames := make([]string, 0, len(schemas))
 	for n := range schemas {
 		schemaNames = append(schemaNames, n)
 	}
 	sort.Strings(schemaNames)
+	// Create schemas in alphabetical order
 	for _, schemaName := range schemaNames {
 		if err := g.generateSchema(schemaName, schemas[schemaName]); err != nil {
 			return err
@@ -59,23 +61,26 @@ func (g *Generation) generateSchema(schemaName string, schema *openapi3.SchemaRe
 	if schema.Value == nil {
 		return fmt.Errorf("schema %q is unresolved schema (nil)", schemaName)
 	}
+	g.File.Commentf("// %s implements OpenAPI element at #/components/schemas/%s", schemaName, schemaName)
+	statement := g.File.Type().Id(schemaName)
 	switch schema.Value.Type {
 	case "object":
-		g.generateObjectSchema(schemaName, schema.Value)
+		g.addStructToStatementFromSchema(statement, schema.Value)
 	default:
-		statement := g.File.Type().Id(schemaName)
 		g.addTypeToStatementFromSchemaRef(statement, schema)
 	}
 
 	return nil
 }
 
-func (g *Generation) generateObjectSchema(schemaName string, schema *openapi3.Schema) error {
+func (g *Generation) addStructToStatementFromSchema(statement *jen.Statement, schema *openapi3.Schema) error {
+	// Sort properties by name
 	propertyNames := make([]string, 0, len(schema.Properties))
 	for n := range schema.Properties {
 		propertyNames = append(propertyNames, n)
 	}
 	sort.Strings(propertyNames)
+	// Create properties in alphabetical order
 	structProperties := make([]jen.Code, len(schema.Properties))
 	for i, propName := range propertyNames {
 		genProp := jen.Id(propName)
@@ -87,7 +92,7 @@ func (g *Generation) generateObjectSchema(schemaName string, schema *openapi3.Sc
 		i++
 	}
 
-	g.File.Type().Id(schemaName).Struct(structProperties...)
+	statement.Struct(structProperties...)
 	return nil
 }
 

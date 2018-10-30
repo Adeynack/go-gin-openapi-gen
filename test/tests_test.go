@@ -10,30 +10,21 @@ import (
 )
 
 func Test_Finances(t *testing.T) {
-	testFromYaml(t, "finances", func(t *testing.T, swagger *openapi3.Swagger) {
-		schemaNames := make([]string, len(swagger.Components.Schemas))
-		i := 0
-		for n := range swagger.Components.Schemas {
-			schemaNames[i] = n
-			i++
-		}
-		assert.Equal(t, []string{
-			"Book",
-			"BookId",
-			"BookList",
-			"UserId",
-		}, schemaNames)
-	})
+	testFromYaml(t, "finances", nil)
 }
 
-func testFromYaml(t *testing.T, specificationName string, swaggerTestFn func(t *testing.T, swagger *openapi3.Swagger)) {
+func testFromYaml(
+	t *testing.T,
+	specificationName string,
+	swaggerTestFn func(t *testing.T, swagger *openapi3.Swagger),
+) (generation *gen.Generation, swagger *openapi3.Swagger) {
 	loader := openapi3.NewSwaggerLoader()
 	assert.NotNil(t, loader)
 	specificationFileContent, err := ioutil.ReadFile(specificationName + ".yaml")
 	if !assert.NoError(t, err) {
 		return
 	}
-	swagger, err := loader.LoadSwaggerFromYAMLData(specificationFileContent)
+	swagger, err = loader.LoadSwaggerFromYAMLData(specificationFileContent)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -43,14 +34,14 @@ func testFromYaml(t *testing.T, specificationName string, swaggerTestFn func(t *
 	conf := &gen.Config{
 		Specification: swagger,
 	}
-	g, err := gen.Generate(conf)
+	generation, err = gen.Generate(conf)
 	if !assert.NoError(t, err) {
 		return
 	}
-	if !assert.NotNil(t, g) {
+	if !assert.NotNil(t, generation) {
 		return
 	}
-	generatedSource := g.File.GoString()
+	generatedSource := generation.File.GoString()
 
 	generatedSourceFile := specificationName + "_generated.txt"
 	err = ioutil.WriteFile(generatedSourceFile, []byte(generatedSource), os.ModePerm)
@@ -67,4 +58,5 @@ func testFromYaml(t *testing.T, specificationName string, swaggerTestFn func(t *
 	}
 
 	assert.Equal(t, string(expectedSource), generatedSource)
+	return
 }

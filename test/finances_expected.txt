@@ -1,12 +1,19 @@
 package api
 
+// Book implements OpenAPI element at #/components/schemas/Book
 type Book struct {
 	id       *BookId
 	name     string
 	owner_id *UserId
 }
+
+// BookId implements OpenAPI element at #/components/schemas/BookId
 type BookId int
+
+// BookList implements OpenAPI element at #/components/schemas/BookList
 type BookList struct {
 	items []*Book
 }
+
+// UserId implements OpenAPI element at #/components/schemas/UserId
 type UserId int
