@@ -41,14 +41,17 @@ components:
   schemas:
 
     BookId:
+      description: Unique identifier of a financial book in the system.
       type: integer
       format: int64
 
     UserId:
+      description: Unique identifier of a user in the system.
       type: integer
       format: int64
 
     Book:
+      description: A financial book, holding accounts, categories and transactions.
       type: object
       properties:
         id:
@@ -59,6 +62,7 @@ components:
           $ref: '#/components/schemas/UserId'
 
     BookList:
+      description: A list of books.
       type: object
       properties:
         items:

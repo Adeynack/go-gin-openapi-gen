@@ -1,6 +1,7 @@
 package api
 
 // Book implements OpenAPI element at #/components/schemas/Book
+// A financial book, holding accounts, categories and transactions.
 type Book struct {
 	id       *BookId
 	name     string
@@ -8,12 +9,15 @@ type Book struct {
 }
 
 // BookId implements OpenAPI element at #/components/schemas/BookId
+// Unique identifier of a financial book in the system.
 type BookId int
 
 // BookList implements OpenAPI element at #/components/schemas/BookList
+// A list of books.
 type BookList struct {
 	items []*Book
 }
 
 // UserId implements OpenAPI element at #/components/schemas/UserId
+// Unique identifier of a user in the system.
 type UserId int

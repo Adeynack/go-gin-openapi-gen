@@ -62,6 +62,7 @@ func (g *Generation) generateSchema(schemaName string, schema *openapi3.SchemaRe
 		return fmt.Errorf("schema %q is unresolved schema (nil)", schemaName)
 	}
 	g.File.Commentf("// %s implements OpenAPI element at #/components/schemas/%s", schemaName, schemaName)
+	g.File.Commentf(schema.Value.Description)
 	statement := g.File.Type().Id(schemaName)
 	switch schema.Value.Type {
 	case "object":
