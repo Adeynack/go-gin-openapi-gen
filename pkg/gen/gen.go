@@ -84,11 +84,13 @@ func (g *Generation) addStructToStatementFromSchema(statement *jen.Statement, sc
 	// Create properties in alphabetical order
 	structProperties := make([]jen.Code, len(schema.Properties))
 	for i, propName := range propertyNames {
-		genProp := jen.Id(propName)
-		err := g.addTypeToStatementFromSchemaRef(genProp, schema.Properties[propName])
+		goPropertyName := toGoFieldName(propName)
+		genProp := jen.Id(goPropertyName)
+		genProp, err := g.addTypeToStatementFromSchemaRef(genProp, schema.Properties[propName])
 		if err != nil {
 			return err
 		}
+		genProp.Tag(map[string]string{"json": propName})
 		structProperties[i] = genProp
 		i++
 	}
@@ -97,17 +99,17 @@ func (g *Generation) addStructToStatementFromSchema(statement *jen.Statement, sc
 	return nil
 }
 
-func (g *Generation) addTypeToStatementFromSchemaRef(statement *jen.Statement, prop *openapi3.SchemaRef) error {
+func (g *Generation) addTypeToStatementFromSchemaRef(s *jen.Statement, prop *openapi3.SchemaRef) (*jen.Statement, error) {
 	if prop.Ref != "" {
 		typeId, err := typeNameFromSchemaRef(prop.Ref)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		statement.Qual(g.File.PackagePrefix, "*"+typeId)
-		return nil
+		s = s.Qual(g.File.PackagePrefix, "*"+typeId)
+		return s, nil
 	}
 
-	return g.addTypeToStatementFromSchema(statement, prop.Value)
+	return g.addTypeToStatementFromSchema(s, prop.Value)
 }
 
 func typeNameFromSchemaRef(ref string) (string, error) {
@@ -118,37 +120,38 @@ func typeNameFromSchemaRef(ref string) (string, error) {
 			"could not extract schema name from ref %q (n: %d, err: %v)",
 			ref, n, err)
 	}
-	return typeId, nil
+	goTypeId := toGoFieldName(typeId)
+	return goTypeId, nil
 }
 
-func (g *Generation) addTypeToStatementFromSchema(s *jen.Statement, schema *openapi3.Schema) error {
+func (g *Generation) addTypeToStatementFromSchema(s *jen.Statement, schema *openapi3.Schema) (*jen.Statement, error) {
 	switch schema.Type {
 	case "integer":
-		s.Int() // todo: support `Format`!
+		s = s.Int() // todo: support `Format`!
 	case "string":
-		s.String() // todo: support `Format`?
+		s = s.String() // todo: support `Format`?
 	case "boolean":
-		s.Bool()
+		s = s.Bool()
 	case "array":
 		return g.completeArrayProperty(s, schema)
 	default:
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"unable to generate property: unsupported schema type %q",
 			schema.Type)
 	}
-	return nil
+	return s, nil
 }
 
-func (g *Generation) completeArrayProperty(statement *jen.Statement, schema *openapi3.Schema) error {
+func (g *Generation) completeArrayProperty(s *jen.Statement, schema *openapi3.Schema) (*jen.Statement, error) {
 	if schema.Items.Ref == "" {
-		return errors.New("arrays are only supported when their items is a ref")
+		return nil, errors.New("arrays are only supported when their items is a ref")
 	}
 	typeName, err := typeNameFromSchemaRef(schema.Items.Ref)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	statement.Index().Qual(g.File.PackagePrefix, `*`+typeName)
-	return nil
+	s = s.Index().Qual(g.File.PackagePrefix, `*`+typeName)
+	return s, nil
 }
 
 /*

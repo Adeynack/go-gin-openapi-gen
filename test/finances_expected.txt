@@ -3,9 +3,9 @@ package api
 // Book implements OpenAPI element at #/components/schemas/Book
 // A financial book, holding accounts, categories and transactions.
 type Book struct {
-	id       *BookId
-	name     string
-	owner_id *UserId
+	ID      *BookId `json:"id"`
+	Name    string  `json:"name"`
+	OwnerID *UserId `json:"owner_id"`
 }
 
 // BookId implements OpenAPI element at #/components/schemas/BookId
@@ -15,7 +15,7 @@ type BookId int
 // BookList implements OpenAPI element at #/components/schemas/BookList
 // A list of books.
 type BookList struct {
-	items []*Book
+	Items []*Book `json:"items"`
 }
 
 // UserId implements OpenAPI element at #/components/schemas/UserId

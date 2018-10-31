@@ -1,5 +1,7 @@
 default: build
 
+.PHONY: test
+
 ginoas:
 	# ▶️  Build ginoas (GIN OpenAPI Specification generator)
 	GO111MODULE=on go build -o bin/ginoas cmd/ginoas/*.go
