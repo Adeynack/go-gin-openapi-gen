@@ -105,7 +105,8 @@ func (g *Generation) addTypeToStatementFromSchemaRef(s *jen.Statement, prop *ope
 		if err != nil {
 			return nil, err
 		}
-		s = s.Qual(g.File.PackagePrefix, "*"+typeId)
+		// todo: For struct types, generate pointer qualified identifier. (*Book instead of Book)
+		s = s.Qual(g.File.PackagePrefix, typeId)
 		return s, nil
 	}
 
@@ -150,7 +151,8 @@ func (g *Generation) completeArrayProperty(s *jen.Statement, schema *openapi3.Sc
 	if err != nil {
 		return nil, err
 	}
-	s = s.Index().Qual(g.File.PackagePrefix, `*`+typeName)
+	// todo: For struct types, generate pointer qualified identifier. (*Book instead of Book)
+	s = s.Index().Qual(g.File.PackagePrefix, typeName)
 	return s, nil
 }
 
