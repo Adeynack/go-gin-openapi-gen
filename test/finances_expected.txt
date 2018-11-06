@@ -1,16 +1,19 @@
 package api
 
+import "time"
+
 // Book implements OpenAPI element at #/components/schemas/Book
 // A financial book, holding accounts, categories and transactions.
 type Book struct {
-	ID      BookId `json:"id"`
-	Name    string `json:"name"`
-	OwnerID UserId `json:"owner_id"`
+	CreatedOn time.Time `json:"created_on"`
+	ID        BookId    `json:"id"`
+	Name      string    `json:"name"`
+	OwnerID   UserId    `json:"owner_id"`
 }
 
 // BookId implements OpenAPI element at #/components/schemas/BookId
 // Unique identifier of a financial book in the system.
-type BookId int
+type BookId int64
 
 // BookList implements OpenAPI element at #/components/schemas/BookList
 // A list of books.
@@ -20,4 +23,4 @@ type BookList struct {
 
 // UserId implements OpenAPI element at #/components/schemas/UserId
 // Unique identifier of a user in the system.
-type UserId int
+type UserId int64

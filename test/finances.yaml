@@ -60,6 +60,9 @@ components:
           type: string
         owner_id:
           $ref: '#/components/schemas/UserId'
+        created_on:
+          type: string
+          format: 'datetime'
 
     BookList:
       description: A list of books.

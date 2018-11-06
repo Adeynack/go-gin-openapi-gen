@@ -126,13 +126,16 @@ func typeNameFromSchemaRef(ref string) (string, error) {
 }
 
 func (g *Generation) addTypeToStatementFromSchema(s *jen.Statement, schema *openapi3.Schema) (*jen.Statement, error) {
+	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types
 	switch schema.Type {
 	case "integer":
-		s = s.Int() // todo: support `Format`!
+		return g.addTypeIntToStatementFromSchema(s, schema)
+	case "number":
+		return g.addTypeNumberToStatementFromSchema(s, schema)
 	case "string":
-		s = s.String() // todo: support `Format`?
+		return g.addTypeStringToStatementFromSchema(s, schema)
 	case "boolean":
-		s = s.Bool()
+		return s.Bool(), nil
 	case "array":
 		return g.completeArrayProperty(s, schema)
 	default:
@@ -140,7 +143,46 @@ func (g *Generation) addTypeToStatementFromSchema(s *jen.Statement, schema *open
 			"unable to generate property: unsupported schema type %q",
 			schema.Type)
 	}
-	return s, nil
+}
+
+func (g *Generation) addTypeIntToStatementFromSchema(s *jen.Statement, schema *openapi3.Schema) (*jen.Statement, error) {
+	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types
+	switch schema.Format {
+	case "", "int32":
+		return s.Int(), nil
+	case "int64":
+		return s.Int64(), nil
+	default:
+		return nil, fmt.Errorf("integer format %q is not recognized", schema.Format)
+	}
+}
+
+func (g *Generation) addTypeNumberToStatementFromSchema(s *jen.Statement, schema *openapi3.Schema) (*jen.Statement, error) {
+	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types
+	switch schema.Format {
+	case "", "float":
+		return s.Float32(), nil
+	case "double":
+		return s.Float64(), nil
+	default:
+		return nil, fmt.Errorf("number format %q is not recognized", schema.Format)
+	}
+}
+
+func (g *Generation) addTypeStringToStatementFromSchema(s *jen.Statement, schema *openapi3.Schema) (*jen.Statement, error) {
+	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types
+	switch schema.Format {
+	case "", "password":
+		return s.String(), nil
+	case "byte":
+		return s.Index().Byte(), nil
+	case "binary":
+		return nil, errors.New(`string format "binary" is not yet supported`)
+	case "date", "datetime", "date-time":
+		return s.Qual("time", "Time"), nil
+	default:
+		return nil, fmt.Errorf("string format %q is not recognized", schema.Format)
+	}
 }
 
 func (g *Generation) completeArrayProperty(s *jen.Statement, schema *openapi3.Schema) (*jen.Statement, error) {
