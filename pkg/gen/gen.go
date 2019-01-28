@@ -16,6 +16,11 @@ type Config struct {
 type Generation struct {
 	Config *Config
 	File   *jen.File
+	SchemaInfo map[string]*SchemaInfo
+}
+
+type SchemaInfo struct {
+	TypeRef bool
 }
 
 // Generate starts the code generation process.
@@ -23,6 +28,7 @@ func Generate(c *Config) (*Generation, error) {
 	g := &Generation{
 		c,
 		jen.NewFile("api"),
+		make(map[string]*SchemaInfo),
 	}
 
 	err := g.generateComponents(&g.Config.Specification.Components)
@@ -178,7 +184,7 @@ func (g *Generation) addTypeStringToStatementFromSchema(s *jen.Statement, schema
 		return s.Index().Byte(), nil
 	case "binary":
 		return nil, errors.New(`string format "binary" is not yet supported`)
-	case "date", "datetime", "date-time":
+	case "date", "date-time":
 		return s.Qual("time", "Time"), nil
 	default:
 		return nil, fmt.Errorf("string format %q is not recognized", schema.Format)

@@ -62,7 +62,7 @@ components:
           $ref: '#/components/schemas/UserId'
         created_on:
           type: string
-          format: 'datetime'
+          format: 'date-time'
 
     BookList:
       description: A list of books.
